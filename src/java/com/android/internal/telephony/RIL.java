@@ -301,6 +301,11 @@ public class RIL extends BaseCommands implements CommandsInterface {
 
     static final int SOCKET_OPEN_RETRY_MILLIS = 4 * 1000;
 
+    /* Per-network elements expected in QUERY_AVAILABLE_NETWORKS response.
+     * Allow to specify int number by device, default is 4.
+     */
+    private int QAN_ELEMENTS = SystemProperties.getInt("ro.ril.telephony.mqanelements", 4);
+
     // The number of the required config values for broadcast SMS stored in the C struct
     // RIL_CDMA_BroadcastServiceInfo
     private static final int CDMA_BSI_NO_OF_INTS_STRUCT = 3;
@@ -3769,19 +3774,19 @@ public class RIL extends BaseCommands implements CommandsInterface {
         String strings[] = (String [])responseStrings(p);
         ArrayList<OperatorInfo> ret;
 
-        if (strings.length % 4 != 0) {
+        if (strings.length % QAN_ELEMENTS != 0) {
             throw new RuntimeException(
                 "RIL_REQUEST_QUERY_AVAILABLE_NETWORKS: invalid response. Got "
-                + strings.length + " strings, expected multible of 4");
+                + strings.length + " strings, expected multible of " + QAN_ELEMENTS);
         }
 
-        ret = new ArrayList<OperatorInfo>(strings.length / 4);
+        ret = new ArrayList<OperatorInfo>(strings.length / QAN_ELEMENTS);
 	Operators init = null;
 	if (strings.length !=0) {
 	    init = new Operators();
 	}
 
-        for (int i = 0 ; i < strings.length ; i += 4) {
+        for (int i = 0 ; i < strings.length ; i += QAN_ELEMENTS) {
             ret.add (
                 new OperatorInfo(
                     strings[i+0],
