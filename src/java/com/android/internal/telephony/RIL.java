@@ -285,6 +285,11 @@ public class RIL extends BaseCommands implements CommandsInterface {
 
     protected Integer mInstanceId;
 
+    // Number of per-network elements expected in QUERY_AVAILABLE_NETWORKS's response.
+    // 4 elements is default, but many RILs actually return 5, making it impossible to
+    // divide the response array without prior knowledge of the number of elements.
+    protected int mQANElements = SystemProperties.getInt("ro.ril.telephony.mqanelements", 4);
+
     //***** Events
 
     static final int EVENT_SEND                 = 1;
@@ -300,11 +305,6 @@ public class RIL extends BaseCommands implements CommandsInterface {
     static final String[] SOCKET_NAME_RIL = {"rild", "rild2", "rild3"};
 
     static final int SOCKET_OPEN_RETRY_MILLIS = 4 * 1000;
-
-    /* Per-network elements expected in QUERY_AVAILABLE_NETWORKS response.
-     * Allow to specify int number by device, default is 4.
-     */
-    private int QAN_ELEMENTS = SystemProperties.getInt("ro.ril.telephony.mqanelements", 4);
 
     // The number of the required config values for broadcast SMS stored in the C struct
     // RIL_CDMA_BroadcastServiceInfo
@@ -3866,19 +3866,15 @@ public class RIL extends BaseCommands implements CommandsInterface {
         String strings[] = (String [])responseStrings(p);
         ArrayList<OperatorInfo> ret;
 
-        if (strings.length % QAN_ELEMENTS != 0) {
+        if (strings.length % mQANElements != 0) {
             throw new RuntimeException(
                 "RIL_REQUEST_QUERY_AVAILABLE_NETWORKS: invalid response. Got "
-                + strings.length + " strings, expected multible of " + QAN_ELEMENTS);
+                + strings.length + " strings, expected multiple of " + mQANElements);
         }
 
-        ret = new ArrayList<OperatorInfo>(strings.length / QAN_ELEMENTS);
-	Operators init = null;
-	if (strings.length !=0) {
-	    init = new Operators();
-	}
+        ret = new ArrayList<OperatorInfo>(strings.length / mQANElements);
 
-        for (int i = 0 ; i < strings.length ; i += QAN_ELEMENTS) {
+        for (int i = 0 ; i < strings.length ; i += mQANElements) {
             ret.add (
                 new OperatorInfo(
                     strings[i+0],
