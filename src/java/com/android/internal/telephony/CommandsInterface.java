@@ -2032,10 +2032,13 @@ public interface CommandsInterface {
      * @param lchStatus, true if call is in lch state
      */
     public void setLocalCallHold(boolean lchStatus);
+<<<<<<< HEAD
 
     /**
      * @hide
      * CM-specific: Ask the RIL about the presence of back-compat flags
      */
     public boolean needsOldRilFeature(String feature);
+=======
+>>>>>>> 5571f0729f0c70b5963c8197f8c6ee84def02712
 }
