@@ -1011,7 +1011,7 @@ public class CDMAPhone extends PhoneBase {
                                 number = defaultVMNumberArray[0];
                             } else if (defaultVMNumberArray.length == 2 &&
                                     !TextUtils.isEmpty(defaultVMNumberArray[1]) &&
-                                    defaultVMNumberArray[1].equalsIgnoreCase(getGroupIdLevel1())) {
+                                    isMatchGid(defaultVMNumberArray[1])) {
                                 number = defaultVMNumberArray[0];
                                 break;
                             }
@@ -1296,8 +1296,10 @@ public class CDMAPhone extends PhoneBase {
                 }
 
                 if (DBG) Rlog.d(LOG_TAG, "Baseband version: " + ar.result);
-                TelephonyManager.from(mContext).setBasebandVersionForPhone(getPhoneId(),
-                        (String)ar.result);
+                if (!"".equals((String)ar.result)) {
+                    setSystemProperty(TelephonyProperties.PROPERTY_BASEBAND_VERSION,
+                                      (String)ar.result);
+                }
             }
             break;
 

@@ -575,9 +575,11 @@ public final class DataConnection extends StateMachine {
         }
 
         mPhone.mCi.setupDataCall(
-                Integer.toString(cp.mRilRat + 2),
+		Integer.toString((mPhone.mCi.getRilVersion() > 4) ? cp.mRilRat + 2
+                        : ServiceState.isGsm(cp.mRilRat + 2) ? RILConstants.SETUP_DATA_TECH_GSM
+                        : RILConstants.SETUP_DATA_TECH_CDMA),
                 Integer.toString(cp.mProfileId),
-                mApnSetting.apn, mApnSetting.user, mApnSetting.password,
+		mApnSetting.apn, mApnSetting.user, mApnSetting.password,
                 Integer.toString(authType),
                 protocol, msg);
     }
@@ -1874,17 +1876,11 @@ public final class DataConnection extends StateMachine {
             switch (msg.what) {
                 case EVENT_CONNECT: {
                     ConnectionParams cp = (ConnectionParams) msg.obj;
+                    // either add this new apn context to our set or
+                    // update the existing cp with the latest connection generation number
+                    mApnContexts.put(cp.mApnContext, cp);
                     if (DBG) {
                         log("DcActiveState: EVENT_CONNECT cp=" + cp + " dc=" + DataConnection.this);
-                    }
-                    if (mApnContexts.containsKey(cp.mApnContext)) {
-                        log("DcActiveState ERROR already added apnContext=" + cp.mApnContext);
-                    } else {
-                        mApnContexts.put(cp.mApnContext, cp);
-                        if (DBG) {
-                            log("DcActiveState msg.what=EVENT_CONNECT RefCount="
-                                    + mApnContexts.size());
-                        }
                     }
                     notifyConnectCompleted(cp, DcFailCause.NONE, false);
                     retVal = HANDLED;
