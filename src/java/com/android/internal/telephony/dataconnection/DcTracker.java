@@ -789,9 +789,8 @@ public class DcTracker extends DcTrackerBase {
         boolean allowed =
                     (attachedState || (mAutoAttachOnCreation.get() &&
                             (mPhone.getSubId() == dataSub))) &&
-                    recordsLoaded &&
-                    (state == PhoneConstants.State.IDLE ||
                     (subscriptionFromNv || recordsLoaded) &&
+                    (state == PhoneConstants.State.IDLE ||
                      mPhone.getServiceStateTracker().isConcurrentVoiceAndDataAllowed()) &&
                     internalDataEnabled &&
                     defaultDataSelected &&
@@ -802,7 +801,6 @@ public class DcTracker extends DcTrackerBase {
             if (!(attachedState || mAutoAttachOnCreation.get())) {
                 reason += " - Attached= " + attachedState;
             }
-            if (!recordsLoaded) reason += " - SIM not loaded";
             if (!(subscriptionFromNv || recordsLoaded)) {
                 reason += " - SIM not loaded and not NV subscription";
             }
@@ -2362,7 +2360,7 @@ public class DcTracker extends DcTrackerBase {
     }
 
     private boolean isNvSubscription() {
-        int radioTech = mPhone.getServiceState().getRilDataRadioTechnology();
+        int radioTech = mPhone.getServiceState().getRilVoiceRadioTechnology();
         if (mCdmaSsm == null) {
             return false;
         }
@@ -2398,7 +2396,10 @@ public class DcTracker extends DcTrackerBase {
     protected void createAllApnList() {
         mAllApnSettings = new ArrayList<ApnSetting>();
         String operator = getOperatorNumeric();
-        if (operator != null && !operator.isEmpty()) {
+
+        if (isDummyProfileNeeded()) {
+            addDummyApnSettings(operator);
+        } else if (operator != null && !operator.isEmpty()) {
             String selection = "numeric = '" + operator + "'";
             String orderBy = "_id";
             // query only enabled apn.
@@ -2420,10 +2421,6 @@ public class DcTracker extends DcTrackerBase {
         addEmergencyApnSetting();
 
         dedupeApnSettings();
-
-        if (mAllApnSettings.isEmpty() && isDummyProfileNeeded()) {
-            addDummyApnSettings(operator);
-        }
 
         if (mAllApnSettings.isEmpty()) {
             if (DBG) log("createAllApnList: No APN found for carrier: " + operator);
